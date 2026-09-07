@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Project: Foresee Center
-  File: public_dashboard/about.html
+  File: public_dashboard/about/index.html  (served at /about)
   Author: Ronan Wallace (https://github.com/ronanwa)
 
   Simple standalone About page. No backend, no scripts.
@@ -11,7 +11,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>About | Foresee Center</title>
-  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/logo/favicon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -159,7 +159,7 @@
 <body>
   <header class="banner">
     <a href="https://foreseecenter.com" aria-label="Foresee Center home">
-      <img src="logo/logo.svg" alt="Foresee Center" />
+      <img src="/logo/logo.svg" alt="Foresee Center" />
     </a>
     <nav class="menu">
       <button type="button" class="menu-toggle" id="menuToggle"
@@ -168,7 +168,7 @@
       </button>
       <ul class="menu-panel" id="menuPanel" hidden>
         <li><a href="https://foreseecenter.com">Home</a></li>
-        <li><a href="about.html">About</a></li>
+        <li><a href="/about">About</a></li>
       </ul>
     </nav>
   </header>
@@ -189,7 +189,7 @@
 
     <h2>Team</h2>
     <div class="team-member">
-      <img src="images/ronanwallace_headshot.jpg" alt="Ronan Wallace" />
+      <img src="/images/ronanwallace_headshot.jpg" alt="Ronan Wallace" />
       <div>
         <div class="name"><a href="https://www.linkedin.com/in/ronanwallace/" target="_blank" rel="noopener">Ronan Wallace</a></div>
         <div class="role">Founder, Director</div>
