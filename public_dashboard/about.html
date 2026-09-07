@@ -106,10 +106,17 @@
       margin: 0 0 1rem;
     }
     h2 {
-      font-size: 1.2rem;
-      margin: 2.25rem 0 0.5rem;
+      font-size: clamp(1.9rem, 5vw, 2.5rem);
+      line-height: 1.15;
+      margin: 2.5rem 0 0.75rem;
     }
     p { margin: 0 0 1rem; }
+    hr {
+      border: 0;
+      border-top: 1px solid #ddd;
+      margin: 2rem 0;
+    }
+    hr + h2 { margin-top: 0; }
     a { color: var(--brand-red); }
     .lead {
       font-size: 1.15rem;
@@ -137,14 +144,6 @@
     .team-member .name a:hover { text-decoration: underline; }
     .team-member .role { color: #333; }
     .team-member .affil { color: #666; font-size: 0.95rem; }
-
-    .back {
-      display: inline-block;
-      margin-top: 2.5rem;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .back:hover { text-decoration: underline; }
 
     footer {
       max-width: 44rem;
@@ -186,6 +185,8 @@
       changes come.
     </p>
 
+    <hr />
+
     <h2>Team</h2>
     <div class="team-member">
       <img src="images/ronanwallace_headshot.jpg" alt="Ronan Wallace" />
@@ -195,8 +196,6 @@
         <div class="affil">Stanford University School of Engineering</div>
       </div>
     </div>
-
-    <a class="back" href="index.html">&larr; Back to the map</a>
   </main>
 
   <footer>
