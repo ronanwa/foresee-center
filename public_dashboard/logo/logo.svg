@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 366 96" role="img" aria-label="Foresee Center">
+  <title>Foresee Center</title>
+  <!-- Mark: four nested open brackets, uniform spacing, tips right-aligned. -->
+  <g transform="translate(9 12) scale(0.72)" fill="none" stroke="#820000" stroke-width="5.5"
+     stroke-linecap="round" stroke-linejoin="round">
+    <g transform="rotate(90 50 50)">
+      <path d="M15 24 L15 85 L85 85 L85 24"/>
+      <path d="M24 24 L24 76 L76 76 L76 24"/>
+      <path d="M33 24 L33 67 L67 67 L67 24"/>
+      <path d="M42 24 L42 58 L58 58 L58 24"/>
+    </g>
+  </g>
+  <g fill="#820000" font-family="'Instrument Sans','Public Sans',Arial,Helvetica,sans-serif">
+    <text x="87" y="43" font-size="30" font-weight="700" letter-spacing="1.5">FORESEE</text>
+    <text x="88" y="70" font-size="18.5" font-weight="500" letter-spacing="6.68">CENTER</text>
+  </g>
+</svg>

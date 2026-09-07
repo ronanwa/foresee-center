@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<!--
+  Project: Bangladesh Project Relay
+  File: frontend/public_dashboard/index.html
+  Author: Ronan Wallace (https://github.com/ronanwa)
+
+  Public dashboard - STANDALONE DEMO (currently the deployed page).
+  NO backend / database connection: the pins come from the hardcoded
+  SAMPLE_REPORTS array in the script below. The array is currently empty;
+  add report objects to it in the shape shown by the commented example.
+  Safe to deploy on its own via GitHub Pages before the API is live.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project RELAY Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+
+  <!-- Fonts used on project-relay.org: Instrument Sans (body/headings),
+       Public Sans (nav links). Both open-source, served by Google Fonts. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Public+Sans:wght@400;600;700&display=swap"
+  />
+
+  <!-- Leaflet (open-source map library, OpenStreetMap tiles, no API key) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <style>
+    :root {
+      --banner-bg: #f5f5f5;   /* banner background */
+      --brand-red: #820000;   /* logo + accents */
+      --ink: #0d1b2a;         /* body text */
+    }
+
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: "Instrument Sans", Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: #f5f5f5;
+    }
+
+    /* --- Banner ------------------------------------------------ */
+    .banner {
+      position: relative;
+      z-index: 1200;
+      background: var(--banner-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+      flex: 0 0 auto;
+    }
+    .banner > a { display: flex; }
+    .banner img {
+      height: clamp(44px, 8vw, 66px);
+      width: auto;
+      display: block;
+    }
+
+    /* --- Hamburger menu ------------------------------------- */
+    .menu { position: relative; }
+    .menu-toggle {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      width: 34px;
+      height: 34px;
+      padding: 7px;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+    .menu-toggle span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      border-radius: 1px;
+      background: var(--brand-red);
+    }
+    .menu-panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 190px;
+      margin: 0;
+      padding: 4px;
+      list-style: none;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    }
+    .menu-panel[hidden] { display: none; }
+    .menu-panel a {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .menu-panel a:hover { background: #f0f0f0; }
+
+    /* --- Map -------------------------------------------------- */
+    #map {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+
+    /* Stacked overlay panel, top-left of the map. */
+    .overlay {
+      position: absolute;
+      top: calc(clamp(44px, 8vw, 66px) + 0.75rem);
+      left: 0.75rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      max-height: calc(100% - clamp(44px, 8vw, 66px) - 1.5rem);
+      overflow-y: auto;
+      padding-right: 4px;   /* room for the scrollbar */
+    }
+
+    .notice {
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 5px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+      text-align: left;
+      line-height: 1.3;
+      font-size: 14px;
+    }
+    .notice .notice-title { font-weight: 700; }
+    .notice .notice-sub { font-size: 0.9em; opacity: 0.8; }
+
+    /* --- Report popup (Sketchfab embed) -------------------- */
+    /* Popup width is pinned in JS (min = max), so the embed box fills the
+       content area exactly and left/right padding stays uniform. */
+    .leaflet-popup-content { margin: 12px; }
+    .sketchfab-embed-wrapper { width: 100%; }
+    .sketchfab-embed-wrapper .embed-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 6px;
+    }
+    .sketchfab-embed-wrapper .embed-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .sketchfab-embed-wrapper .embed-year {
+      flex: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a4a4a;
+    }
+    .sketchfab-embed-wrapper > iframe {
+      width: 100%;
+      height: 250px;
+      border: 0;
+      display: block;
+      border-radius: 4px;
+    }
+    .sketchfab-embed-wrapper .embed-quote {
+      margin: 10px 0 0;
+      padding-left: 10px;
+      border-left: 3px solid var(--brand-red);
+    }
+    .sketchfab-embed-wrapper .embed-quote a {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--brand-red);
+      text-decoration: none;
+    }
+    .sketchfab-embed-wrapper .embed-quote a:hover { text-decoration: underline; }
+    .sketchfab-embed-wrapper .embed-quote .art-source {
+      display: block;
+      margin-top: 1px;
+      font-size: 11px;
+      font-style: italic;
+      color: #4a4a4a;
+    }
+  </style>
+</head>
+<body>
+  <header class="banner">
+    <a href="https://foreseecenter.com" aria-label="Foresee Center home">
+      <img src="logo/logo.svg" alt="Foresee Center" />
+    </a>
+    <nav class="menu">
+      <button type="button" class="menu-toggle" id="menuToggle"
+              aria-label="Menu" aria-expanded="false" aria-controls="menuPanel">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="menu-panel" id="menuPanel" hidden>
+        <li><a href="https://foreseecenter.com">Home</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div id="map"></div>
+  <div class="overlay">
+    <div class="notice">
+      <div class="notice-title">Mustang District, Nepal</div>
+      <div class="notice-sub">Mapping climate impacts</div>
+    </div>
+  </div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // REPORT DATA - hardcoded, no backend. This page never contacts a
+    // server or database. Each entry needs `latitude` / `longitude`; add an
+    // optional `embed` HTML string to show something when the dot is clicked.
+    // ------------------------------------------------------------------
+    const SAMPLE_REPORTS = [
+      {
+        // Lubra Village, Mustang, Nepal
+        latitude: 28.80222,
+        longitude: 83.79158,
+        embed: `<div class="sketchfab-embed-wrapper"><div class="embed-head"><p class="embed-title">Lubra Village</p><span class="embed-year">2022</span></div> <iframe title="Lubra Village, Nepal" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/e92ab2961f654539ae8b3cc8a3c390f5/embed?camera=0&annotations_visible=0&ui_hint=2&ui_theme=dark&dnt=1"> </iframe> <blockquote class="embed-quote"><a href="https://nepalitimes.com/mustang-forced-to-adapt-to-climate-crisis" target="_blank" rel="noopener">Mustang forced to adapt to climate crisis</a><span class="art-source">Nepali Times</span></blockquote><blockquote class="embed-quote"><a href="https://digitalcollections.sit.edu/jcgi/vol1/iss1/5/" target="_blank" rel="noopener">Relocating Lubra Village and Visualizing Himalayan Flood Damages with Remote Sensing</a><span class="art-source">Journal of Critical Global Issues</span></blockquote> </div>`,
+      },
+      {
+        // Phudzeling Caves, Mustang, Nepal
+        latitude: 28.833769,
+        longitude: 83.811548,
+        embed: `<div class="sketchfab-embed-wrapper"><div class="embed-head"><p class="embed-title">Phudzeling Caves</p><span class="embed-year">2025</span></div> <iframe title="Phudzeling Caves, Mustang" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/8fe5f5e05b4d4019a72bd4bbb4dc62e1/embed?camera=0&ui_hint=2&dnt=1"> </iframe> </div>`,
+      },
+    ];
+
+    // The map always opens framed on Mustang District (exact bounds are
+    // computed from the boundary layer once it is added, below).
+    const map = L.map("map", { zoomControl: false })
+      .setView([28.95, 83.87], 9);
+    L.control.zoom({ position: "bottomright" }).addTo(map);
+
+    // Standard OpenStreetMap basemap - free, no API key, and the most
+    // widely-reachable tile host.
+    const tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "© OpenStreetMap contributors",
+    });
+    tiles.on("tileerror", () => {
+      console.warn("Basemap tiles failed to load (network / firewall?)");
+    });
+    tiles.addTo(map);
+
+    // Mustang District boundary (OSM relation 4588145, simplified). Outline only.
+    const MUSTANG_BOUNDARY = {"type":"Polygon","coordinates":[[[83.478999,28.8229882],[83.4873338,28.8024694],[83.4856288,28.7900377],[83.502785,28.7932375],[83.5532153,28.7714689],[83.557636,28.7447321],[83.547402,28.7364768],[83.5362501,28.7117477],[83.538676,28.6964098],[83.5261629,28.6874282],[83.5345776,28.6820533],[83.5470001,28.651573],[83.5600328,28.6458359],[83.5640661,28.6341159],[83.562313,28.6129241],[83.5694924,28.5940636],[83.579677,28.5836742],[83.5890408,28.5906341],[83.6118267,28.5848796],[83.6220005,28.5754069],[83.6432236,28.5722547],[83.6374923,28.5663881],[83.6632043,28.5663397],[83.6758876,28.584516],[83.6854923,28.6125436],[83.6991397,28.6198574],[83.7049939,28.6383773],[83.7200972,28.6521597],[83.7296355,28.6541069],[83.7263939,28.6658154],[83.7354678,28.6728242],[83.7443808,28.6901213],[83.7660243,28.6866712],[83.780721,28.6901239],[83.8127418,28.7140585],[83.8398314,28.7258019],[83.8630056,28.7226096],[83.8696999,28.7265131],[83.877633,28.7373087],[83.8908358,28.7429073],[83.893074,28.7723323],[83.9341407,28.7828553],[83.9429044,28.8065911],[83.9366579,28.8135441],[83.9461833,28.8324044],[83.9564605,28.8356238],[83.9672637,28.8180419],[83.9960554,28.8120835],[84.0043927,28.8019112],[84.0221804,28.8013084],[84.0271733,28.8110535],[84.0480068,28.8218506],[84.0462412,28.8315877],[84.0510025,28.8443948],[84.0610315,28.8390706],[84.0846917,28.849791],[84.0885412,28.8549118],[84.0834471,28.8656598],[84.0959446,28.887427],[84.1159946,28.8808694],[84.1309896,28.8892329],[84.1582708,28.8723816],[84.1845324,28.9005714],[84.2262376,28.89306],[84.222217,28.914936],[84.225545,28.943374],[84.241125,28.976047],[84.239159,28.997224],[84.25126,29.018099],[84.249143,29.036704],[84.219646,29.053948],[84.1896092,29.0471279],[84.186822,29.081025],[84.20104,29.104925],[84.200284,29.124892],[84.173964,29.131094],[84.162317,29.185549],[84.167913,29.200373],[84.199074,29.213835],[84.200435,29.240912],[84.193628,29.244845],[84.179107,29.237584],[84.159442,29.241971],[84.141442,29.237584],[84.116181,29.244391],[84.113458,29.263904],[84.121777,29.27419],[84.098332,29.291283],[84.085172,29.294611],[84.0699279,29.2842822],[84.0551502,29.2925324],[84.053557,29.298241],[84.0421089,29.3012274],[84.0265632,29.286246],[84.015708,29.2893463],[83.988936,29.2986433],[84.0015177,29.3128628],[83.9763043,29.3284517],[83.9627293,29.3312532],[83.9433332,29.3156036],[83.9035412,29.3264194],[83.8974177,29.3188184],[83.885351,29.319116],[83.856308,29.309283],[83.847837,29.29688],[83.8121439,29.3017749],[83.8104375,29.2903923],[83.794441,29.27661],[83.80155,29.255433],[83.792021,29.247567],[83.771146,29.247114],[83.764793,29.240155],[83.741196,29.245298],[83.711245,29.244088],[83.6819,29.211718],[83.656034,29.204003],[83.657697,29.188574],[83.662992,29.183885],[83.6565907,29.1765931],[83.6658734,29.1698019],[83.6615359,29.1649168],[83.6625395,29.1553856],[83.6765179,29.146791],[83.6799522,29.1237786],[83.6602078,29.1247002],[83.6499449,29.1197701],[83.6520336,29.1097512],[83.6463524,29.1040079],[83.6307673,29.1086405],[83.6205281,29.0977452],[83.6150319,29.0985905],[83.6149645,29.0933138],[83.6265246,29.0856443],[83.6316409,29.0626826],[83.6180821,29.0561989],[83.6182247,29.0444065],[83.6122924,29.0350584],[83.6156867,29.0180294],[83.6116072,29.0148952],[83.6169404,29.004906],[83.613821,28.9863751],[83.6092178,28.9800753],[83.5989066,28.9854957],[83.5889891,28.980665],[83.5811588,28.9574114],[83.5668612,28.9430198],[83.5575469,28.942836],[83.555438,28.9347861],[83.4994889,28.8772712],[83.5047445,28.8712995],[83.5058581,28.8571411],[83.4995621,28.8449949],[83.4807005,28.8443635],[83.478999,28.8229882]]]};
+
+    // Dim everything OUTSIDE Mustang: one polygon whose outer ring covers the
+    // world and whose hole is the district (evenodd fill leaves the hole clear).
+    const OUTSIDE_MASK = {
+      type: "Polygon",
+      coordinates: [
+        [[-540, -85], [540, -85], [540, 85], [-540, 85], [-540, -85]],
+        MUSTANG_BOUNDARY.coordinates[0],
+      ],
+    };
+    L.geoJSON(OUTSIDE_MASK, {
+      style: {
+        stroke: false,
+        fillColor: "#8C8881",
+        fillOpacity: 0.3,
+        fillRule: "evenodd",
+      },
+      interactive: false,
+    }).addTo(map);
+
+    const mustangLayer = L.geoJSON(MUSTANG_BOUNDARY, {
+      style: { color: "#8C1515", weight: 3, opacity: 0.9, fill: false },
+      interactive: false,
+    }).addTo(map);
+
+    // Default view frames the district with a little breathing room.
+    const MUSTANG_BOUNDS = mustangLayer.getBounds().pad(0.06);
+    map.fitBounds(MUSTANG_BOUNDS);
+
+    // Report markers: filled circle with a black outline.
+    const MARKER_STYLE = {
+      radius: 7,
+      fillColor: "#FF4D66",
+      fillOpacity: 1,
+      color: "#000000",
+      weight: 2,
+      opacity: 1,
+    };
+
+    function renderReports(reports) {
+      for (const report of reports) {
+        if (report.latitude == null || report.longitude == null) continue;
+        const marker = L.circleMarker(
+          [report.latitude, report.longitude],
+          MARKER_STYLE
+        ).addTo(map);
+        if (report.embed) {
+          marker.bindPopup(report.embed, {
+            closeButton: false,
+            minWidth: 336,
+            maxWidth: 336,
+          });
+        }
+      }
+    }
+
+    renderReports(SAMPLE_REPORTS);
+
+    // --- Hamburger menu -------------------------------------------------
+    const menuToggle = document.getElementById("menuToggle");
+    const menuPanel = document.getElementById("menuPanel");
+
+    function setMenu(open) {
+      menuPanel.toggleAttribute("hidden", !open);
+      menuToggle.setAttribute("aria-expanded", String(open));
+    }
+
+    menuToggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setMenu(menuPanel.hasAttribute("hidden"));
+    });
+    document.addEventListener("click", () => setMenu(false));
+
+    menuPanel.addEventListener("click", (event) => {
+      if (event.target.closest("a")) setMenu(false);
+    });
+
+    // The map div is a flex child, so its final size isn't known until layout
+    // settles. Re-assert size and the default view once the page has loaded.
+    window.addEventListener("load", () => {
+      map.invalidateSize();
+      map.fitBounds(MUSTANG_BOUNDS);
+    });
+  </script>
+</body>
+</html>
